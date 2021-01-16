@@ -2,27 +2,30 @@ name: Maintenance
 
 on:
   schedule:
-    - cron: "20 21 * * 4"
+    - cron: "0 20 * * 1"
 
 jobs:
   npm-upgrades:
     name: Regenerate package-lock.json
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v2
 
       - name: Set up Node JS
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: 14.15.1
+          node-version: 14.15.4
 
       - name: Regenerate package-lock.json
         run: make -C ui npm-upgrade
 
+      - name: Rebuild react app
+        run: make -C ui build
+
       - name: Create Pull Request
         id: cpr
-        uses: peter-evans/create-pull-request@v3.5.0
+        uses: peter-evans/create-pull-request@v3.6.0
         with:
           token: ${{ secrets.GH_REPO_TOKEN }}
           author: "Łukasz Mierzwa <l.mierzwa@gmail.com>"
@@ -46,7 +49,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15.5
+          go-version: 1.15.6
 
       - name: Mock web assets
         run: make mock-assets
@@ -59,7 +62,7 @@ jobs:
 
       - name: Create Pull Request
         id: cpr
-        uses: peter-evans/create-pull-request@v3.5.0
+        uses: peter-evans/create-pull-request@v3.6.0
         with:
           token: ${{ secrets.GH_REPO_TOKEN }}
           author: "Łukasz Mierzwa <l.mierzwa@gmail.com>"

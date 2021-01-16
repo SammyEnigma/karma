@@ -110,16 +110,20 @@ func setupRouter(router *chi.Mux) {
 		MaxAge:           300,
 	}))
 
+	allowAuthBypass := []string{
+		getViewURL("/health"),
+		getViewURL("/metrics"),
+	}
 	if config.Config.Authentication.Header.Name != "" {
 		config.Config.Authentication.Enabled = true
-		router.Use(headerAuth(config.Config.Authentication.Header.Name, config.Config.Authentication.Header.ValueRegex))
+		router.Use(headerAuth(config.Config.Authentication.Header.Name, config.Config.Authentication.Header.ValueRegex, allowAuthBypass))
 	} else if len(config.Config.Authentication.BasicAuth.Users) > 0 {
 		config.Config.Authentication.Enabled = true
 		users := map[string]string{}
 		for _, u := range config.Config.Authentication.BasicAuth.Users {
 			users[u.Username] = u.Password
 		}
-		router.Use(basicAuth(users))
+		router.Use(basicAuth(users, allowAuthBypass))
 	}
 
 	router.Get(getViewURL("/"), index)
@@ -188,6 +192,7 @@ func setupUpstreams() error {
 			alertmanager.WithHTTPTransport(httpTransport), // we will pass a nil unless TLS.CA or TLS.Cert is set
 			alertmanager.WithHTTPHeaders(s.Headers),
 			alertmanager.WithCORSCredentials(s.CORS.Credentials),
+			alertmanager.WithHealthchecks(s.Healthcheck.Filters),
 		)
 		if err != nil {
 			return fmt.Errorf("failed to create Alertmanager '%s' with URI '%s': %s", s.Name, uri.SanitizeURI(s.URI), err)
